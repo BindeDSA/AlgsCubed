@@ -35,8 +35,8 @@ function Login() {
               padding: '0.75rem', 
               borderRadius: '8px', 
               border: '1px solid var(--glass-border)',
-              background: 'rgba(255, 255, 255, 0.05)',
-              color: 'var(--pure-white)',
+              background: 'transparent',
+              color: 'var(--text-light)',
               outline: 'none'
             }} 
           />

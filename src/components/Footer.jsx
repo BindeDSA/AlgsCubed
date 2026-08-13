@@ -6,7 +6,7 @@ function Footer() {
       <div className="container">
         <div className="footer-content">
           <div>
-            <h3>Algorithms Cubed</h3>
+            <h3>Algs Cubed</h3>
             <p>Master the cube, one algorithm at a time.</p>
           </div>
           <div className="social-links">
@@ -16,7 +16,7 @@ function Footer() {
           </div>
         </div>
         <div style={{ marginTop: '2rem', textAlign: 'center', opacity: 0.5, fontSize: '0.875rem' }}>
-          &copy; {new Date().getFullYear()} Algorithms Cubed. All rights reserved.
+          &copy; {new Date().getFullYear()} Algs Cubed. All rights reserved.
         </div>
       </div>
     </footer>
