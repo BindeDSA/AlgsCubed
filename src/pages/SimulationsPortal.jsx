@@ -2,30 +2,64 @@ import React, { useState, useRef, useEffect } from 'react';
 import { getSticker, setSticker, getStickerIndex, getKociembaState, applyMove, getCenterColor } from '../cubeEngine';
 import { randomScrambleForEvent } from 'cubing/scramble';
 
-let solverWorker;
+import { getNextSolverChunk } from '../solver';
+
+let solverWorker = null;
 let reqIdCounter = 0;
 const resolvers = {};
 
 if (typeof window !== 'undefined') {
-  solverWorker = new Worker(new URL('../solver.worker.js', import.meta.url), { type: 'module' });
-  solverWorker.onmessage = (e) => {
-    const { reqId, chunk, state, success, error } = e.data;
-    if (resolvers[reqId]) {
-      if (success) {
-        resolvers[reqId].resolve({ chunk, state });
-      } else {
-        resolvers[reqId].reject(new Error(error));
+  try {
+    solverWorker = new Worker(new URL('../solver.worker.js', import.meta.url), { type: 'module' });
+    solverWorker.onmessage = (e) => {
+      const { reqId, chunk, state, success, error } = e.data;
+      if (resolvers[reqId]) {
+        if (success) {
+          resolvers[reqId].resolve({ chunk, state });
+        } else {
+          resolvers[reqId].reject(new Error(error));
+        }
+        delete resolvers[reqId];
       }
-      delete resolvers[reqId];
-    }
-  };
+    };
+    solverWorker.onerror = (e) => {
+      console.warn("WebWorker encountered an error. Falling back to main thread execution for future chunks.");
+      solverWorker = null;
+    };
+  } catch (err) {
+    console.warn("Failed to initialize WebWorker. Falling back to main thread execution.");
+    solverWorker = null;
+  }
 }
 
 const calculateChunkAsync = (ints, state) => {
   return new Promise((resolve, reject) => {
+    if (!solverWorker) {
+      // Fallback: Execute on main thread
+      try {
+        const chunk = getNextSolverChunk(ints, state);
+        resolve({ chunk, state });
+      } catch (err) {
+        reject(err);
+      }
+      return;
+    }
+
     const reqId = reqIdCounter++;
     resolvers[reqId] = { resolve, reject };
-    solverWorker.postMessage({ reqId, ints, state });
+    
+    try {
+      solverWorker.postMessage({ reqId, ints, state });
+    } catch (err) {
+      console.warn("Worker postMessage failed. Falling back to main thread.", err);
+      solverWorker = null;
+      try {
+        const chunk = getNextSolverChunk(ints, state);
+        resolve({ chunk, state });
+      } catch (e) {
+        reject(e);
+      }
+    }
   });
 };
 
