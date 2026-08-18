@@ -37,15 +37,15 @@ const simulateAUF = (ints, triggers, goalCheck) => {
       let postMoves = [];
       for (let u2 = 0; u2 < 4; u2++) {
         if (goalCheck(getKociembaState(postInts))) {
-           let fSetup = [...setupMoves];
-           if (setupMoves.length === 3) fSetup = ["U'"];
-           if (setupMoves.length === 2) fSetup = ["U2"];
-           
-           let fPost = [...postMoves];
-           if (postMoves.length === 3) fPost = ["U'"];
-           if (postMoves.length === 2) fPost = ["U2"];
-           
-           return [...fSetup, ...trigger, ...fPost];
+          let fSetup = [...setupMoves];
+          if (setupMoves.length === 3) fSetup = ["U'"];
+          if (setupMoves.length === 2) fSetup = ["U2"];
+
+          let fPost = [...postMoves];
+          if (postMoves.length === 3) fPost = ["U'"];
+          if (postMoves.length === 2) fPost = ["U2"];
+
+          return [...fSetup, ...trigger, ...fPost];
         }
         postInts = applyMove(postInts, 'U');
         postMoves.push('U');
@@ -65,13 +65,13 @@ export const getNextSolverChunk = (ints, state = {}) => {
   const U_col = getCenterColor(curr, 0);
   const D_col = getCenterColor(curr, 3);
   let crossSolved = false;
-  
+
   if (U_col === 1) { // 1 is Yellow
     crossSolved = [4, 5, 6, 7].every(t => s.ep[t] === t && s.eo[t] === 0);
   } else if (D_col === 1) { // White on Top
     crossSolved = [0, 1, 2, 3].every(t => s.ep[t] === t && s.eo[t] === 0);
   }
-  
+
   if (!crossSolved) {
     if (U_col !== 1) {
       let move = '';
@@ -92,101 +92,101 @@ export const getNextSolverChunk = (ints, state = {}) => {
   // 2. White Cross (via Daisy on Top)
   if (!crossSolved) {
     const isDaisyEdge = (st, e) => {
-        const pos = st.ep.indexOf(e);
-        return pos >= 0 && pos <= 3 && st.eo[pos] === 0;
+      const pos = st.ep.indexOf(e);
+      return pos >= 0 && pos <= 3 && st.eo[pos] === 0;
     };
-    
+
     const solvedCrossEdges = [4, 5, 6, 7].filter(e => s.ep[e] === e && s.eo[e] === 0);
     const daisyEdges = [4, 5, 6, 7].filter(e => isDaisyEdge(s, e));
-    
+
     if (daisyEdges.length === 4) {
-        state.daisyDone = true;
+      state.daisyDone = true;
     }
-    
+
     if (!state.daisyDone && daisyEdges.length < 4) {
-        const daisyTriggers = (() => {
-            const basicMoves = ['R', "R'", 'L', "L'", 'F', "F'", 'B', "B'", 'D', "D'", 'D2', 'R2', 'L2', 'F2', 'B2', 'U', "U'", 'U2'];
-            const tr = [];
-            for (const m of basicMoves) tr.push([m]);
-            for (const m1 of basicMoves) {
-                for (const m2 of basicMoves) {
-                    if (m1[0] !== m2[0]) {
-                        tr.push([m1, m2]);
-                        for (const m3 of basicMoves) {
-                             if (m2[0] !== m3[0]) tr.push([m1, m2, m3]);
-                        }
-                    }
-                }
+      const daisyTriggers = (() => {
+        const basicMoves = ['R', "R'", 'L', "L'", 'F', "F'", 'B', "B'", 'D', "D'", 'D2', 'R2', 'L2', 'F2', 'B2', 'U', "U'", 'U2'];
+        const tr = [];
+        for (const m of basicMoves) tr.push([m]);
+        for (const m1 of basicMoves) {
+          for (const m2 of basicMoves) {
+            if (m1[0] !== m2[0]) {
+              tr.push([m1, m2]);
+              for (const m3 of basicMoves) {
+                if (m2[0] !== m3[0]) tr.push([m1, m2, m3]);
+              }
             }
-            return tr;
-        })();
-
-        let uInts = curr;
-        let uMoves = [];
-        for (let u = 0; u < 4; u++) {
-            for (const trigger of daisyTriggers) {
-                const testInts = applyMoves(uInts, trigger);
-                const st = getKociembaState(testInts);
-                const testDaisy = [4, 5, 6, 7].filter(e => isDaisyEdge(st, e)).length;
-                
-                if (testDaisy > daisyEdges.length) {
-                    let finalUMoves = uMoves;
-                    if (uMoves.length === 3) finalUMoves = ["U'"];
-                    if (uMoves.length === 2) finalUMoves = ["U2"];
-                    return { phase: 'Build Daisy', moves: [...finalUMoves, ...trigger] };
-                }
-            }
-            uInts = applyMove(uInts, 'U');
-            uMoves.push('U');
+          }
         }
+        return tr;
+      })();
+
+      let uInts = curr;
+      let uMoves = [];
+      for (let u = 0; u < 4; u++) {
+        for (const trigger of daisyTriggers) {
+          const testInts = applyMoves(uInts, trigger);
+          const st = getKociembaState(testInts);
+          const testDaisy = [4, 5, 6, 7].filter(e => isDaisyEdge(st, e)).length;
+
+          if (testDaisy > daisyEdges.length) {
+            let finalUMoves = uMoves;
+            if (uMoves.length === 3) finalUMoves = ["U'"];
+            if (uMoves.length === 2) finalUMoves = ["U2"];
+            return { phase: 'Build Daisy', moves: [...finalUMoves, ...trigger] };
+          }
+        }
+        uInts = applyMove(uInts, 'U');
+        uMoves.push('U');
+      }
     } else {
-        if (daisyEdges.length > 0) {
-            const atomicMoves = [['R2'], ['L2'], ['F2'], ['B2'], ['U'], ["U'"], ['U2']];
-            const isCrossSolved = (st) => [4, 5, 6, 7].every(e => st.ep[e] === e && st.eo[e] === 0);
+      if (daisyEdges.length > 0) {
+        const atomicMoves = [['R2'], ['L2'], ['F2'], ['B2'], ['U'], ["U'"], ['U2']];
+        const isCrossSolved = (st) => [4, 5, 6, 7].every(e => st.ep[e] === e && st.eo[e] === 0);
 
-            let maxDepth = 12; 
-            let queues = Array.from({length: maxDepth + 1}, () => []);
-            queues[0].push({ ints: curr, moves: [] });
-            
-            let visited = new Set();
-            visited.add(curr.join(','));
+        let maxDepth = 12;
+        let queues = Array.from({ length: maxDepth + 1 }, () => []);
+        queues[0].push({ ints: curr, moves: [] });
 
-            let solutionMoves = null;
+        let visited = new Set();
+        visited.add(curr.join(','));
 
-            for (let cost = 0; cost <= maxDepth; cost++) {
-                while (queues[cost].length > 0) {
-                    const { ints: qInts, moves: qMoves } = queues[cost].shift();
+        let solutionMoves = null;
 
-                    for (const move of atomicMoves) {
-                        const nextMoves = [...qMoves, ...move];
-                        const nextCost = nextMoves.length;
-                        if (nextCost > maxDepth) continue;
+        for (let cost = 0; cost <= maxDepth; cost++) {
+          while (queues[cost].length > 0) {
+            const { ints: qInts, moves: qMoves } = queues[cost].shift();
 
-                        const nextInts = applyMoves(qInts, move);
-                        const stateHash = nextInts.join(',');
-                        
-                        if (!visited.has(stateHash)) {
-                            visited.add(stateHash);
-                            
-                            const nextState = getKociembaState(nextInts);
-                            
-                            if (isCrossSolved(nextState)) {
-                                solutionMoves = nextMoves;
-                                break;
-                            }
-                            
-                            queues[nextCost].push({ ints: nextInts, moves: nextMoves });
-                        }
-                    }
-                    if (solutionMoves) break;
+            for (const move of atomicMoves) {
+              const nextMoves = [...qMoves, ...move];
+              const nextCost = nextMoves.length;
+              if (nextCost > maxDepth) continue;
+
+              const nextInts = applyMoves(qInts, move);
+              const stateHash = nextInts.join(',');
+
+              if (!visited.has(stateHash)) {
+                visited.add(stateHash);
+
+                const nextState = getKociembaState(nextInts);
+
+                if (isCrossSolved(nextState)) {
+                  solutionMoves = nextMoves;
+                  break;
                 }
-                if (solutionMoves) break;
+
+                queues[nextCost].push({ ints: nextInts, moves: nextMoves });
+              }
             }
-            
-            if (solutionMoves) {
-                return { phase: 'Complete Cross (Optimal)', moves: solutionMoves };
-            }
+            if (solutionMoves) break;
+          }
+          if (solutionMoves) break;
         }
+
+        if (solutionMoves) {
+          return { phase: 'Complete Cross (Optimal)', moves: solutionMoves };
+        }
+      }
     }
   }
 
@@ -199,61 +199,61 @@ export const getNextSolverChunk = (ints, state = {}) => {
   // 4. White Corners (Targets: 4, 5, 6, 7)
   const cornerTargets = [4, 7, 6, 5];
   const cornersSolved = (st) => cornerTargets.every(c => st.cp[c] === c && st.co[c] === 0);
-  
+
   if (!cornersSolved(s)) {
     const getSolvedCornersCount = (st) => cornerTargets.filter(c => st.cp[c] === c && st.co[c] === 0).length;
     const startCount = getSolvedCornersCount(s);
 
     const atomicMoves = [
-        ['R', 'U', "R'"],
-        ['U'], ["U'"], ['U2'],
-        ['y'], ["y'"], ['y2']
+      ['R', 'U', "R'"],
+      ['U'], ["U'"], ['U2'],
+      ['y'], ["y'"], ['y2']
     ];
 
     let maxDepth = 20; // Max allowed single moves
-    let queues = Array.from({length: maxDepth + 1}, () => []);
+    let queues = Array.from({ length: maxDepth + 1 }, () => []);
     queues[0].push({ ints: curr, moves: [] });
-    
+
     let visited = new Set();
     visited.add(curr.join(','));
 
     let solutionMoves = null;
 
     for (let cost = 0; cost <= maxDepth; cost++) {
-        while (queues[cost].length > 0) {
-            const { ints: qInts, moves: qMoves } = queues[cost].shift();
+      while (queues[cost].length > 0) {
+        const { ints: qInts, moves: qMoves } = queues[cost].shift();
 
-            for (const move of atomicMoves) {
-                const nextMoves = [...qMoves, ...move];
-                const nextCost = nextMoves.length;
-                if (nextCost > maxDepth) continue;
+        for (const move of atomicMoves) {
+          const nextMoves = [...qMoves, ...move];
+          const nextCost = nextMoves.length;
+          if (nextCost > maxDepth) continue;
 
-                const nextInts = applyMoves(qInts, move);
-                const stateHash = nextInts.join(',');
-                
-                if (!visited.has(stateHash)) {
-                    visited.add(stateHash);
-                    
-                    const nextState = getKociembaState(nextInts);
-                    const nextCount = getSolvedCornersCount(nextState);
-                    
-                    if (nextCount > startCount) {
-                        solutionMoves = nextMoves;
-                        break;
-                    }
-                    
-                    queues[nextCost].push({ ints: nextInts, moves: nextMoves });
-                }
+          const nextInts = applyMoves(qInts, move);
+          const stateHash = nextInts.join(',');
+
+          if (!visited.has(stateHash)) {
+            visited.add(stateHash);
+
+            const nextState = getKociembaState(nextInts);
+            const nextCount = getSolvedCornersCount(nextState);
+
+            if (nextCount > startCount) {
+              solutionMoves = nextMoves;
+              break;
             }
-            if (solutionMoves) break;
+
+            queues[nextCost].push({ ints: nextInts, moves: nextMoves });
+          }
         }
         if (solutionMoves) break;
+      }
+      if (solutionMoves) break;
     }
 
     if (solutionMoves) {
-        return { phase: 'Insert White Corner (BFS)', moves: solutionMoves };
+      return { phase: 'Insert White Corner (BFS)', moves: solutionMoves };
     } else {
-        return { phase: 'Find Solvable Corner (Fallback)', moves: ['y'] };
+      return { phase: 'Find Solvable Corner (Fallback)', moves: ['y'] };
     }
   }
 
@@ -263,24 +263,24 @@ export const getNextSolverChunk = (ints, state = {}) => {
     const rightInsertRestored = ['U', 'R', "U'", "R'", "U'", "y'", "R'", 'U', 'R', 'y'];
     const frontInsertRestored = ["U'", "y'", "R'", 'U', 'R', 'y', 'U', 'R', "U'", "R'"];
     const rightTriggers = [rightInsertRestored, frontInsertRestored];
-    
+
     const leftInsertRestored = ["U'", "L'", "U", "L", "U", "y", "L", "U'", "L'", "y'"];
     const frontLeftInsertRestored = ["U", "y", "L", "U'", "L'", "y'", "U'", "L'", "U", "L"];
     const leftTriggers = [leftInsertRestored, frontLeftInsertRestored];
 
     if (!(s.ep[8] === 8 && s.eo[8] === 0)) {
-        const moves = simulateTriggers(curr, rightTriggers, (st) => st.ep[8] === 8 && st.eo[8] === 0);
-        if (moves) return { phase: 'Insert F2L Edge (R)', moves };
+      const moves = simulateTriggers(curr, rightTriggers, (st) => st.ep[8] === 8 && st.eo[8] === 0);
+      if (moves) return { phase: 'Insert F2L Edge (R)', moves };
     }
 
     if (!(s.ep[9] === 9 && s.eo[9] === 0)) {
-        const moves = simulateTriggers(curr, leftTriggers, (st) => st.ep[9] === 9 && st.eo[9] === 0);
-        if (moves) return { phase: 'Insert F2L Edge (L)', moves };
+      const moves = simulateTriggers(curr, leftTriggers, (st) => st.ep[9] === 9 && st.eo[9] === 0);
+      if (moves) return { phase: 'Insert F2L Edge (L)', moves };
     }
-    
+
     // Check if ANY F2L edge is in the U layer (indices 0, 1, 2, 3)
     const f2lEdgeInU = [8, 9, 10, 11].some(e => s.ep.indexOf(e) < 4);
-    
+
     if (f2lEdgeInU) {
       return { phase: 'Find Solvable F2L Edge', moves: ['y'] };
     } else {
@@ -295,12 +295,12 @@ export const getNextSolverChunk = (ints, state = {}) => {
   if (!ollEdgeGoal(s)) {
     const algLine = ['F', 'R', 'U', "R'", "U'", "F'"];
     const algL = ['F', 'U', 'R', "U'", "R'", "F'"];
-    
+
     let moves = simulateTriggers(curr, [algLine, algL], ollEdgeGoal);
-    
+
     // If simulate fails (e.g. dot case requires multiple), just apply algLine once to progress
-    if (!moves) moves = algLine; 
-    
+    if (!moves) moves = algLine;
+
     return { phase: 'OLL Edges', moves };
   }
 
@@ -308,52 +308,52 @@ export const getNextSolverChunk = (ints, state = {}) => {
   const ollCornerGoal = (st) => st.co[0] === 0 && st.co[1] === 0 && st.co[2] === 0 && st.co[3] === 0;
   if (!ollCornerGoal(s)) {
     const sune = ["R", "U", "R'", "U", "R", "U2", "R'"];
-    const oll = ["L'", "U'", "R", "U'", "L", "U", "R'"];
+    const oll = ["L'", "U", "R", "U'", "L", "U", "R'"];
     const atomicMoves = [sune, oll, ['U'], ["U'"], ['U2']];
 
-    let maxDepth = 25; 
-    let queues = Array.from({length: maxDepth + 1}, () => []);
+    let maxDepth = 25;
+    let queues = Array.from({ length: maxDepth + 1 }, () => []);
     queues[0].push({ ints: curr, moves: [] });
-    
+
     let visited = new Set();
     visited.add(curr.join(','));
 
     let solutionMoves = null;
 
     for (let cost = 0; cost <= maxDepth; cost++) {
-        while (queues[cost].length > 0) {
-            const { ints: qInts, moves: qMoves } = queues[cost].shift();
+      while (queues[cost].length > 0) {
+        const { ints: qInts, moves: qMoves } = queues[cost].shift();
 
-            for (const move of atomicMoves) {
-                const nextMoves = [...qMoves, ...move];
-                const nextCost = nextMoves.length;
-                if (nextCost > maxDepth) continue;
+        for (const move of atomicMoves) {
+          const nextMoves = [...qMoves, ...move];
+          const nextCost = nextMoves.length;
+          if (nextCost > maxDepth) continue;
 
-                const nextInts = applyMoves(qInts, move);
-                const stateHash = nextInts.join(',');
-                
-                if (!visited.has(stateHash)) {
-                    visited.add(stateHash);
-                    
-                    const nextState = getKociembaState(nextInts);
-                    
-                    if (ollCornerGoal(nextState)) {
-                        solutionMoves = nextMoves;
-                        break;
-                    }
-                    
-                    queues[nextCost].push({ ints: nextInts, moves: nextMoves });
-                }
+          const nextInts = applyMoves(qInts, move);
+          const stateHash = nextInts.join(',');
+
+          if (!visited.has(stateHash)) {
+            visited.add(stateHash);
+
+            const nextState = getKociembaState(nextInts);
+
+            if (ollCornerGoal(nextState)) {
+              solutionMoves = nextMoves;
+              break;
             }
-            if (solutionMoves) break;
+
+            queues[nextCost].push({ ints: nextInts, moves: nextMoves });
+          }
         }
         if (solutionMoves) break;
+      }
+      if (solutionMoves) break;
     }
-    
+
     if (solutionMoves) {
-        return { phase: 'OLL Corners (Optimal)', moves: solutionMoves };
+      return { phase: 'OLL Corners (Optimal)', moves: solutionMoves };
     } else {
-        return { phase: 'OLL Corners (Fallback)', moves: sune };
+      return { phase: 'OLL Corners (Fallback)', moves: sune };
     }
   }
 
